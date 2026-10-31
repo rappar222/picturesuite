@@ -12,10 +12,10 @@ export const ExpandPanel: React.FC<ExpandPanelProps> = ({
   isProcessing,
   hasImage,
 }) => {
-  const [top, setTop] = useState(50);
-  const [bottom, setBottom] = useState(50);
-  const [left, setLeft] = useState(50);
-  const [right, setRight] = useState(50);
+  const [top, setTop] = useState(60);
+  const [bottom, setBottom] = useState(60);
+  const [left, setLeft] = useState(60);
+  const [right, setRight] = useState(60);
   const [mode, setMode] = useState("smart_fill");
 
   const setAll = (val: number) => {
@@ -29,11 +29,11 @@ export const ExpandPanel: React.FC<ExpandPanelProps> = ({
     <div className="tool-panel">
       <div className="panel-header">
         <div className="panel-title">
-          <Maximize2 size={16} color="#8b5cf6" />
+          <Maximize2 size={17} color="var(--accent-purple)" />
           <span>AI Image Expanding</span>
         </div>
         <p className="panel-subtitle">
-          Extend canvas boundaries outward with contextual texture extrapolation.
+          Extend canvas boundaries outward with contextual gradient & texture extrapolation.
         </p>
       </div>
 
@@ -42,7 +42,7 @@ export const ExpandPanel: React.FC<ExpandPanelProps> = ({
           <span className="setting-label">Expansion Margins (pixels)</span>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div>
-              <span style={{ fontSize: 10, color: "var(--text-dim)" }}>Top</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "var(--text-dim)", display: "block", marginBottom: 4 }}>Top</span>
               <input
                 type="number"
                 className="input-num"
@@ -53,7 +53,7 @@ export const ExpandPanel: React.FC<ExpandPanelProps> = ({
               />
             </div>
             <div>
-              <span style={{ fontSize: 10, color: "var(--text-dim)" }}>Bottom</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "var(--text-dim)", display: "block", marginBottom: 4 }}>Bottom</span>
               <input
                 type="number"
                 className="input-num"
@@ -64,7 +64,7 @@ export const ExpandPanel: React.FC<ExpandPanelProps> = ({
               />
             </div>
             <div>
-              <span style={{ fontSize: 10, color: "var(--text-dim)" }}>Left</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "var(--text-dim)", display: "block", marginBottom: 4 }}>Left</span>
               <input
                 type="number"
                 className="input-num"
@@ -75,7 +75,7 @@ export const ExpandPanel: React.FC<ExpandPanelProps> = ({
               />
             </div>
             <div>
-              <span style={{ fontSize: 10, color: "var(--text-dim)" }}>Right</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "var(--text-dim)", display: "block", marginBottom: 4 }}>Right</span>
               <input
                 type="number"
                 className="input-num"
@@ -89,31 +89,36 @@ export const ExpandPanel: React.FC<ExpandPanelProps> = ({
         </div>
 
         <div className="setting-group">
-          <span className="setting-label">Quick Expand Presets</span>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <button className="btn-sm" onClick={() => setAll(40)}>+40px</button>
-            <button className="btn-sm" onClick={() => setAll(80)}>+80px</button>
-            <button className="btn-sm" onClick={() => setAll(150)}>+150px</button>
-            <button className="btn-sm" onClick={() => { setTop(0); setBottom(0); setLeft(120); setRight(120); }}>Wide</button>
+          <span className="setting-label">Quick Presets</span>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+            <button className="btn-sm" style={{ justifyContent: "center" }} onClick={() => setAll(40)}>
+              +40px
+            </button>
+            <button className="btn-sm" style={{ justifyContent: "center" }} onClick={() => setAll(80)}>
+              +80px
+            </button>
+            <button className="btn-sm" style={{ justifyContent: "center" }} onClick={() => setAll(150)}>
+              +150px
+            </button>
           </div>
         </div>
 
         <div className="setting-group">
-          <span className="setting-label">Synthesis Mode</span>
+          <span className="setting-label">Outpainting Mode</span>
           <div style={{ display: "flex", gap: 8 }}>
             <button
-              className={`btn-sm ${mode === "smart_fill" ? "btn-primary" : ""}`}
+              className={`btn-sm ${mode === "smart_fill" ? "active" : ""}`}
               style={{ flex: 1, justifyContent: "center" }}
               onClick={() => setMode("smart_fill")}
             >
-              Smart Fill
+              Smart Texture Fill
             </button>
             <button
-              className={`btn-sm ${mode === "reflect_blend" ? "btn-primary" : ""}`}
+              className={`btn-sm ${mode === "mirror" ? "active" : ""}`}
               style={{ flex: 1, justifyContent: "center" }}
-              onClick={() => setMode("reflect_blend")}
+              onClick={() => setMode("mirror")}
             >
-              Mirror Blend
+              Symmetric Mirror
             </button>
           </div>
         </div>
@@ -124,8 +129,15 @@ export const ExpandPanel: React.FC<ExpandPanelProps> = ({
           onClick={() => onExpandImage(top, bottom, left, right, mode)}
         >
           <Layers size={16} />
-          <span>{isProcessing ? "Synthesizing Canvas..." : "Expand Canvas"}</span>
+          <span>{isProcessing ? "Synthesizing Canvas..." : "Expand Canvas Boundaries"}</span>
         </button>
+
+        <div className="tip-box">
+          <span>📐</span>
+          <span>
+            <strong>Pro Tip:</strong> Outpaint images to convert portrait shots into landscape wallpapers or banners without cropping.
+          </span>
+        </div>
       </div>
     </div>
   );

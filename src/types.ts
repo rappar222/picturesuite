@@ -1,5 +1,7 @@
 export type ToolType = "bg_removal" | "magic_eraser" | "expand" | "color_grade" | "convert";
 
+export type ThemeMode = "system" | "light" | "dark";
+
 export interface ImageMetadata {
   width: u32;
   height: u32;

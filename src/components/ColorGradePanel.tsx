@@ -32,11 +32,11 @@ export const ColorGradePanel: React.FC<ColorGradePanelProps> = ({
     <div className="tool-panel">
       <div className="panel-header">
         <div className="panel-title">
-          <Palette size={16} color="#38bdf8" />
+          <Palette size={17} color="var(--accent-cyan)" />
           <span>AI Auto Color Grading</span>
         </div>
         <p className="panel-subtitle">
-          Professional chromatic adaptation, dynamic range expansion, and cinematic 3D LUT grading.
+          Chromatic adaptation, dynamic range expansion, and cinematic 3D LUT grading.
         </p>
       </div>
 
@@ -72,31 +72,39 @@ export const ColorGradePanel: React.FC<ColorGradePanelProps> = ({
           />
         </div>
 
-        <div className="setting-group" style={{ gap: 10 }}>
+        <div className="setting-group" style={{ gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Compass size={14} color="#60a5fa" />
-              <span style={{ fontSize: 12, color: "var(--text-main)" }}>Auto White Balance</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Compass size={16} color="var(--primary)" />
+              <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-main)" }}>Gray-World Auto Balance</span>
             </div>
-            <input
-              type="checkbox"
-              checked={autoBalance}
-              onChange={(e) => setAutoBalance(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: "var(--primary)" }}
-            />
+            <label className="modern-switch">
+              <input
+                type="checkbox"
+                checked={autoBalance}
+                onChange={(e) => setAutoBalance(e.target.checked)}
+              />
+              <div className="switch-track">
+                <div className="switch-thumb" />
+              </div>
+            </label>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <SunMedium size={14} color="#fbbf24" />
-              <span style={{ fontSize: 12, color: "var(--text-main)" }}>Dynamic Range S-Curve</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <SunMedium size={16} color="var(--accent-amber)" />
+              <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-main)" }}>Dynamic Contrast S-Curve</span>
             </div>
-            <input
-              type="checkbox"
-              checked={dynamicRange}
-              onChange={(e) => setDynamicRange(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: "var(--primary)" }}
-            />
+            <label className="modern-switch">
+              <input
+                type="checkbox"
+                checked={dynamicRange}
+                onChange={(e) => setDynamicRange(e.target.checked)}
+              />
+              <div className="switch-track">
+                <div className="switch-thumb" />
+              </div>
+            </label>
           </div>
         </div>
 
@@ -106,8 +114,15 @@ export const ColorGradePanel: React.FC<ColorGradePanelProps> = ({
           onClick={() => onColorGrade(selectedPreset, intensity, autoBalance, dynamicRange)}
         >
           <Palette size={16} />
-          <span>{isProcessing ? "Grading..." : "Apply Auto Color Grade"}</span>
+          <span>{isProcessing ? "Grading Image..." : "Apply Color Grade"}</span>
         </button>
+
+        <div className="tip-box">
+          <span>🎨</span>
+          <span>
+            <strong>Pro Tip:</strong> Combines automatic color temperature neutralization with cinema tonal curves for instant magazine quality.
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import { Image as ImageIcon, UploadCloud, Wand2 } from "lucide-react";
+import { Image as ImageIcon, UploadCloud, Brush, Sparkles } from "lucide-react";
 import { ToolType } from "../types";
 
 interface CanvasAreaProps {
@@ -100,7 +100,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
           ctx.drawImage(imgOrig, 0, 0, canvas.width, canvas.height);
           ctx.restore();
 
-          // Right half: Current edited
+          // Right half: Current
           ctx.save();
           ctx.beginPath();
           ctx.rect(splitX, 0, canvas.width - splitX, canvas.height);
@@ -108,51 +108,60 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
           ctx.drawImage(imgCurrent, 0, 0, canvas.width, canvas.height);
           ctx.restore();
 
-          // Divider line
-          ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 2;
+          // Draw split line
           ctx.beginPath();
           ctx.moveTo(splitX, 0);
           ctx.lineTo(splitX, canvas.height);
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 2;
           ctx.stroke();
 
-          // Draw mask overlay if any
-          drawMaskOverlay(ctx);
+          // Labels
+          ctx.font = "bold 14px system-ui";
+          ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+          ctx.fillRect(splitX - 85, 12, 75, 24);
+          ctx.fillRect(splitX + 10, 12, 70, 24);
+
+          ctx.fillStyle = "#ffffff";
+          ctx.fillText("Original", splitX - 75, 29);
+          ctx.fillText("Edited", splitX + 22, 29);
         };
       } else {
-        ctx.drawImage(imgCurrent, 0, 0);
-        drawMaskOverlay(ctx);
+        // Normal render
+        ctx.drawImage(imgCurrent, 0, 0, canvas.width, canvas.height);
+
+        // Overlay mask if magic eraser
+        if (tool === "magic_eraser" && maskCanvasRef.current) {
+          ctx.save();
+          ctx.globalAlpha = 0.55;
+          ctx.drawImage(maskCanvasRef.current, 0, 0);
+          ctx.restore();
+        }
       }
     };
-  }, [currentImage, originalImage, compareMode, splitPos]);
+  }, [currentImage, compareMode, originalImage, splitPos, tool]);
 
-  const drawMaskOverlay = (ctx: CanvasRenderingContext2D) => {
-    if (maskCanvasRef.current && tool === "magic_eraser") {
-      ctx.save();
-      ctx.globalAlpha = 0.55;
-      ctx.drawImage(maskCanvasRef.current, 0, 0);
-      ctx.restore();
-    }
-  };
-
-  // Convert mouse event to image-space coordinates
-  const getImageCoords = (e: React.MouseEvent<HTMLDivElement>) => {
+  // Coordinate mapping from screen viewport to canvas pixels
+  const getCanvasCoords = (e: React.MouseEvent<HTMLDivElement>) => {
     const canvas = displayCanvasRef.current;
     if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
 
+    const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
 
-    return { x, y };
+    if (x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height) {
+      return { x, y };
+    }
+    return null;
   };
 
-  // Drawing mask handlers
+  // Drawing mask on magic eraser
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Check if middle click or space held for panning
+    // Middle click or Space/Alt pan
     if (e.button === 1 || e.altKey || e.shiftKey) {
       setIsPanning(true);
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
@@ -161,141 +170,164 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
 
     if (compareMode) {
       setIsSplitting(true);
+      updateSplit(e);
       return;
     }
 
-    if (tool === "magic_eraser" && e.button === 0) {
-      const coords = getImageCoords(e);
-      if (!coords) return;
+    if (tool !== "magic_eraser") return;
 
-      setIsDrawing(true);
-      setLastPoint(coords);
-      paintMask(coords.x, coords.y, coords.x, coords.y);
-    }
+    const coords = getCanvasCoords(e);
+    if (!coords) return;
+
+    setIsDrawing(true);
+    setLastPoint(coords);
+    drawOnMask(coords.x, coords.y, coords.x, coords.y);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const coords = getImageCoords(e);
+  const drawOnMask = (x1: number, y1: number, x2: number, y2: number) => {
+    const mask = maskCanvasRef.current;
+    if (!mask) return;
+    const mctx = mask.getContext("2d");
+    if (!mctx) return;
 
-    if (isPanning) {
-      setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
-      return;
-    }
+    mctx.lineWidth = brushSize;
+    mctx.lineCap = "round";
+    mctx.lineJoin = "round";
+    mctx.strokeStyle = "#ef4444"; // Vivid red mask overlay
+    mctx.fillStyle = "#ef4444";
 
-    if (isSplitting && containerRef.current && displayCanvasRef.current) {
-      const rect = displayCanvasRef.current.getBoundingClientRect();
-      const relativeX = (e.clientX - rect.left) / rect.width;
-      setSplitPos(Math.max(0.01, Math.min(0.99, relativeX)));
-      return;
-    }
-
-    if (isDrawing && tool === "magic_eraser" && coords && lastPoint) {
-      paintMask(lastPoint.x, lastPoint.y, coords.x, coords.y);
-      setLastPoint(coords);
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDrawing(false);
-    setIsPanning(false);
-    setIsSplitting(false);
-    setLastPoint(null);
-  };
-
-  const paintMask = (x1: number, y1: number, x2: number, y2: number) => {
-    const maskCanvas = maskCanvasRef.current;
-    if (!maskCanvas) return;
-
-    const ctx = maskCanvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.strokeStyle = "#ff2244";
-    ctx.fillStyle = "#ff2244";
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.lineWidth = brushSize;
-
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
+    mctx.beginPath();
+    mctx.moveTo(x1, y1);
+    mctx.lineTo(x2, y2);
+    mctx.stroke();
 
     setHasDrawnMask(true);
     renderCanvas();
   };
 
-  // Drag and drop image files
-  const handleDrop = (e: React.DragEvent) => {
+  const updateSplit = (e: React.MouseEvent<HTMLDivElement>) => {
+    const canvas = displayCanvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const ratio = Math.max(0.01, Math.min(0.99, (e.clientX - rect.left) / rect.width));
+    setSplitPos(ratio);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isPanning) {
+      setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
+      return;
+    }
+
+    if (isSplitting && compareMode) {
+      updateSplit(e);
+      return;
+    }
+
+    if (!isDrawing || tool !== "magic_eraser") return;
+
+    const coords = getCanvasCoords(e);
+    if (!coords) return;
+
+    if (lastPoint) {
+      drawOnMask(lastPoint.x, lastPoint.y, coords.x, coords.y);
+    }
+    setLastPoint(coords);
+  };
+
+  const handleMouseUp = () => {
+    setIsDrawing(false);
+    setLastPoint(null);
+    setIsPanning(false);
+    setIsSplitting(false);
+  };
+
+  // Zooming
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.1 : -0.1;
+    setZoom((prev) => Math.max(0.2, Math.min(5.0, Number((prev + delta).toFixed(2)))));
+  };
+
+  // File Drop
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDraggingOver(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          onImageLoaded(event.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          if (ev.target?.result) {
+            onImageLoaded(ev.target.result as string);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
-  // Zoom on wheel
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY < 0 ? 0.1 : -0.1;
-    setZoom((prev) => Math.max(0.1, Math.min(5.0, prev + delta)));
-  };
-
-  // Generate Demo Test Image
+  // Built-in Scenic Demo Image Generator
   const handleLoadSample = () => {
     const sampleCanvas = document.createElement("canvas");
     sampleCanvas.width = 900;
-    sampleCanvas.height = 600;
+    sampleCanvas.height = 650;
     const sctx = sampleCanvas.getContext("2d");
     if (!sctx) return;
 
-    // Scenic sunset gradient
-    const grad = sctx.createLinearGradient(0, 0, 0, 600);
-    grad.addColorStop(0, "#1e1b4b");
-    grad.addColorStop(0.3, "#431407");
-    grad.addColorStop(0.6, "#d97706");
-    grad.addColorStop(0.8, "#fbbf24");
-    grad.addColorStop(1, "#f59e0b");
-    sctx.fillStyle = grad;
-    sctx.fillRect(0, 0, 900, 600);
+    // Golden Sunset Gradient Sky
+    const skyGrad = sctx.createLinearGradient(0, 0, 0, 420);
+    skyGrad.addColorStop(0, "#0c1b33");
+    skyGrad.addColorStop(0.3, "#3b2667");
+    skyGrad.addColorStop(0.65, "#bc4e9c");
+    skyGrad.addColorStop(0.85, "#f857a6");
+    skyGrad.addColorStop(1, "#ff8a5c");
+    sctx.fillStyle = skyGrad;
+    sctx.fillRect(0, 0, 900, 420);
 
     // Glowing Sun
-    const sunGrad = sctx.createRadialGradient(450, 320, 10, 450, 320, 120);
+    const sunGrad = sctx.createRadialGradient(450, 300, 10, 450, 300, 120);
     sunGrad.addColorStop(0, "#ffffff");
-    sunGrad.addColorStop(0.3, "#fed7aa");
+    sunGrad.addColorStop(0.3, "#ffe259");
+    sunGrad.addColorStop(0.8, "rgba(255, 167, 38, 0.4)");
     sunGrad.addColorStop(1, "transparent");
     sctx.fillStyle = sunGrad;
     sctx.beginPath();
-    sctx.arc(450, 320, 120, 0, Math.PI * 2);
+    sctx.arc(450, 300, 120, 0, Math.PI * 2);
     sctx.fill();
 
-    // Mountains silhouette
-    sctx.fillStyle = "#0f172a";
+    // Distant Mountain Ridges
+    sctx.fillStyle = "#2d163d";
     sctx.beginPath();
-    sctx.moveTo(0, 600);
-    sctx.lineTo(0, 420);
-    sctx.lineTo(160, 340);
-    sctx.lineTo(320, 440);
-    sctx.lineTo(480, 300);
-    sctx.lineTo(650, 430);
-    sctx.lineTo(820, 310);
-    sctx.lineTo(900, 380);
-    sctx.lineTo(900, 600);
+    sctx.moveTo(0, 420);
+    sctx.lineTo(150, 260);
+    sctx.lineTo(320, 360);
+    sctx.lineTo(550, 240);
+    sctx.lineTo(750, 350);
+    sctx.lineTo(900, 300);
+    sctx.lineTo(900, 420);
     sctx.closePath();
     sctx.fill();
 
-    // Foreground Subject (e.g. hiker silhouette to test background & object removal)
-    sctx.fillStyle = "#020617";
-    // Body & head
+    // Ocean Water with sunset reflections
+    const waterGrad = sctx.createLinearGradient(0, 420, 0, 650);
+    waterGrad.addColorStop(0, "#c44569");
+    waterGrad.addColorStop(0.4, "#574b90");
+    waterGrad.addColorStop(1, "#192a56");
+    sctx.fillStyle = waterGrad;
+    sctx.fillRect(0, 420, 900, 230);
+
+    // Island / Pier Foreground Subject
+    sctx.fillStyle = "#0f172a";
     sctx.beginPath();
-    sctx.arc(450, 430, 20, 0, Math.PI * 2); // Head
+    sctx.ellipse(450, 580, 220, 50, 0, 0, Math.PI * 2);
+    sctx.fill();
+
+    // Silhouette Person standing
+    sctx.fillStyle = "#020617";
+    sctx.beginPath();
+    sctx.arc(450, 430, 14, 0, Math.PI * 2); // Head
     sctx.fill();
     sctx.fillRect(435, 450, 30, 60); // Torso
     sctx.fillRect(430, 510, 15, 60); // Left Leg
@@ -303,7 +335,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
     sctx.fillRect(418, 455, 14, 45); // Left Arm
     sctx.fillRect(468, 455, 14, 45); // Right Arm
 
-    // Walking stick / unwanted object to erase
+    // Walking stick / unwanted object to erase with Samsung Magic Eraser
     sctx.lineWidth = 5;
     sctx.strokeStyle = "#e2e8f0";
     sctx.beginPath();
@@ -331,21 +363,30 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
       onDragLeave={() => setIsDraggingOver(false)}
       onDrop={handleDrop}
     >
-      {/* Floating Brush/Compare indicator */}
+      {/* Floating Status & Brush Pill */}
       {currentImage && (
         <div className="canvas-floating-bar">
           {compareMode ? (
-            <span style={{ fontSize: 11, color: "var(--text-main)" }}>
-              Drag Left/Right to Compare Original vs Edited
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-main)" }}>
+              Split Comparison: Drag slider to compare Original vs Edited
             </span>
           ) : tool === "magic_eraser" ? (
-            <span style={{ fontSize: 11, color: "#f87171" }}>
-              Brush Size: {brushSize}px • Draw over objects to remove
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Brush size={14} color="var(--accent-rose)" />
+              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent-rose)" }}>
+                Brush: {brushSize}px • Click & drag on image to erase
+              </span>
+            </div>
           ) : (
-            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-              {imgDim.w} × {imgDim.h} px • {Math.round(zoom * 100)}%
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-main)" }}>
+                {imgDim.w} × {imgDim.h} px
+              </span>
+              <span style={{ color: "var(--border-hover)" }}>•</span>
+              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                Zoom: {Math.round(zoom * 100)}%
+              </span>
+            </div>
           )}
         </div>
       )}
@@ -377,18 +418,26 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
         </div>
       ) : (
         <div className="empty-dropzone">
-          <UploadCloud className="empty-icon" />
+          <div className="empty-icon-wrap">
+            <UploadCloud size={34} />
+          </div>
           <div>
             <h3 className="empty-title">Drop an image here</h3>
             <p className="empty-desc">
-              Supports PNG, JPG, WebP, AVIF, TIFF, BMP.
-              <br />
-              All AI operations run locally at maximum speed in native Rust.
+              All AI operations run locally at maximum speed with native Rust SIMD & Rayon acceleration.
             </p>
+            <div className="format-tags">
+              <span className="format-tag">PNG</span>
+              <span className="format-tag">JPEG</span>
+              <span className="format-tag">WEBP</span>
+              <span className="format-tag">AVIF</span>
+              <span className="format-tag">TIFF</span>
+              <span className="format-tag">BMP</span>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <label className="btn-sm btn-primary" style={{ cursor: "pointer" }}>
-              <ImageIcon size={15} />
+          <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
+            <label className="btn-sm btn-primary" style={{ cursor: "pointer", padding: "10px 18px", fontSize: 13 }}>
+              <ImageIcon size={16} />
               <span>Browse Image</span>
               <input
                 type="file"
@@ -408,8 +457,8 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
               />
             </label>
 
-            <button className="btn-sm" onClick={handleLoadSample}>
-              <Wand2 size={15} />
+            <button className="btn-sm" style={{ padding: "10px 18px", fontSize: 13 }} onClick={handleLoadSample}>
+              <Sparkles size={16} color="var(--accent-amber)" />
               <span>Try Demo Picture</span>
             </button>
           </div>

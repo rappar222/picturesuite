@@ -20,7 +20,7 @@ export const BgRemovalPanel: React.FC<BgRemovalPanelProps> = ({
     <div className="tool-panel">
       <div className="panel-header">
         <div className="panel-title">
-          <Sparkles size={16} color="#06b6d4" />
+          <Sparkles size={17} color="var(--accent-cyan)" />
           <span>AI Background Removal</span>
         </div>
         <p className="panel-subtitle">
@@ -60,16 +60,20 @@ export const BgRemovalPanel: React.FC<BgRemovalPanelProps> = ({
         </div>
 
         <div className="setting-group" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <ShieldCheck size={14} color="#10b981" />
-            <span style={{ fontSize: 12, color: "var(--text-main)" }}>Bilateral Edge Refinement</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <ShieldCheck size={16} color="var(--accent-emerald)" />
+            <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-main)" }}>Bilateral Edge Refinement</span>
           </div>
-          <input
-            type="checkbox"
-            checked={edgeRefine}
-            onChange={(e) => setEdgeRefine(e.target.checked)}
-            style={{ width: 16, height: 16, accentColor: "var(--primary)" }}
-          />
+          <label className="modern-switch">
+            <input
+              type="checkbox"
+              checked={edgeRefine}
+              onChange={(e) => setEdgeRefine(e.target.checked)}
+            />
+            <div className="switch-track">
+              <div className="switch-thumb" />
+            </div>
+          </label>
         </div>
 
         <button
@@ -81,8 +85,11 @@ export const BgRemovalPanel: React.FC<BgRemovalPanelProps> = ({
           <span>{isProcessing ? "Processing Matting..." : "Remove Background"}</span>
         </button>
 
-        <div style={{ background: "rgba(255,255,255,0.03)", padding: 12, borderRadius: 8, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>
-          💡 <strong>Tip:</strong> Increases or decreases sensitivity if parts of the subject blend into the background.
+        <div className="tip-box">
+          <span>💡</span>
+          <span>
+            <strong>Pro Tip:</strong> Adjust sensitivity if the foreground subject shares similar colors with the background.
+          </span>
         </div>
       </div>
     </div>

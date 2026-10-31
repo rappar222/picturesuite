@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { ToolType, ImageMetadata, HistoryItem, ConversionResult } from "./types";
+import { useTheme } from "./hooks/useTheme";
 import { Header } from "./components/Header";
 import { CanvasArea } from "./components/CanvasArea";
 import { BgRemovalPanel } from "./components/BgRemovalPanel";
@@ -19,6 +20,7 @@ import { ConvertPanel } from "./components/ConvertPanel";
 import { HistoryPanel } from "./components/HistoryPanel";
 
 export function App() {
+  const { themePreference, resolvedTheme, cycleTheme } = useTheme();
   const [activeTool, setActiveTool] = useState<ToolType>("bg_removal");
   const [status, setStatus] = useState("Ready");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -327,6 +329,9 @@ export function App() {
         onZoomOut={() => setZoom((z) => Math.max(0.1, z - 0.15))}
         onResetZoom={() => setZoom(1.0)}
         hasImage={currentImage !== null}
+        themePreference={themePreference}
+        resolvedTheme={resolvedTheme}
+        onCycleTheme={cycleTheme}
       />
 
       <div className="app-body">

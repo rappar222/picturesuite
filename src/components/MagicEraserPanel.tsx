@@ -27,11 +27,11 @@ export const MagicEraserPanel: React.FC<MagicEraserPanelProps> = ({
     <div className="tool-panel">
       <div className="panel-header">
         <div className="panel-title">
-          <Eraser size={16} color="#f43f5e" />
-          <span>Magic Eraser (Object Removal)</span>
+          <Eraser size={17} color="var(--accent-rose)" />
+          <span>Magic Eraser</span>
         </div>
         <p className="panel-subtitle">
-          Erase unwanted people, blemishes, or objects like on Samsung Galaxy and fill them back in seamlessly.
+          Erase unwanted people, blemishes, or objects and reconstruct the background seamlessly.
         </p>
       </div>
 
@@ -52,7 +52,7 @@ export const MagicEraserPanel: React.FC<MagicEraserPanelProps> = ({
 
         <div className="setting-group">
           <div className="setting-label">
-            <span>Context Inpaint Radius</span>
+            <span>Inpaint Context Radius</span>
             <span className="setting-val">{searchRadius} px</span>
           </div>
           <input
@@ -66,8 +66,8 @@ export const MagicEraserPanel: React.FC<MagicEraserPanelProps> = ({
 
         <div className="setting-group">
           <div className="setting-label">
-            <span>Refinement Passes</span>
-            <span className="setting-val">{iterations}</span>
+            <span>Refinement Iterations</span>
+            <span className="setting-val">{iterations} passes</span>
           </div>
           <input
             type="range"
@@ -94,11 +94,14 @@ export const MagicEraserPanel: React.FC<MagicEraserPanelProps> = ({
           onClick={() => onEraseObject(searchRadius, iterations)}
         >
           <Wand2 size={16} />
-          <span>{isProcessing ? "Inpainting Context..." : "Erase & Fill Context"}</span>
+          <span>{isProcessing ? "Inpainting Context..." : "Erase & Fill Selection"}</span>
         </button>
 
-        <div style={{ background: "rgba(255,255,255,0.03)", padding: 12, borderRadius: 8, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>
-          🖌️ <strong>How to use:</strong> Paint over any item or person directly on the canvas with the red brush, then click <strong>Erase & Fill Context</strong>.
+        <div className="tip-box">
+          <span>🧹</span>
+          <span>
+            <strong>How to use:</strong> Use your mouse cursor to paint over any unwanted object or person on the canvas. PictureSuite will sample surrounding textures to fill it back in.
+          </span>
         </div>
       </div>
     </div>

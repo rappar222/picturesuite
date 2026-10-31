@@ -21,7 +21,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
     <div className="info-sidebar">
       <div className="info-section">
         <div className="info-section-title" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Info size={13} />
+          <Info size={13} color="var(--primary)" />
           <span>Image Properties</span>
         </div>
         {metadata ? (
@@ -31,22 +31,22 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
               <div className="meta-v">{metadata.width} × {metadata.height}</div>
             </div>
             <div className="meta-item">
-              <span className="meta-k">Aspect Ratio</span>
+              <span className="meta-k">Aspect</span>
               <div className="meta-v">{metadata.aspect_ratio.toFixed(2)}:1</div>
             </div>
             <div className="meta-item">
-              <span className="meta-k">Color Format</span>
+              <span className="meta-k">Color Space</span>
               <div className="meta-v">{metadata.color_type}</div>
             </div>
             <div className="meta-item">
               <span className="meta-k">Last Compute</span>
-              <div className="meta-v" style={{ color: "#34d399" }}>
+              <div className="meta-v" style={{ color: "var(--accent-emerald)" }}>
                 {lastExecutionTime !== null ? `${lastExecutionTime} ms` : "Ready"}
               </div>
             </div>
           </div>
         ) : (
-          <div style={{ fontSize: 11, color: "var(--text-dim)", padding: "10px 0" }}>
+          <div style={{ fontSize: 11, color: "var(--text-dim)", padding: "12px 0", textAlign: "center" }}>
             No active image loaded.
           </div>
         )}
@@ -54,7 +54,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
 
       <div className="info-section" style={{ flex: 1 }}>
         <div className="info-section-title" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <History size={13} />
+          <History size={13} color="var(--accent-purple)" />
           <span>Edit History</span>
         </div>
         <div className="history-list">
@@ -68,7 +68,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
                 <div className="history-name">{item.action}</div>
                 {item.details && <div className="history-time">{item.details}</div>}
               </div>
-              {idx === currentIndex && <ArrowRight size={13} color="#3b82f6" />}
+              {idx === currentIndex && <ArrowRight size={14} color="var(--primary)" />}
             </div>
           ))}
         </div>
